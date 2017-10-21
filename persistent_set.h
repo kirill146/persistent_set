@@ -4,7 +4,14 @@
 template <typename T>
 struct shared_ptr {
 	shared_ptr() noexcept : cnt(nullptr), ptr(nullptr) {}
-	explicit shared_ptr(T* p) noexcept : cnt(new size_t(1)), ptr(p) {}
+	explicit shared_ptr(T* p)
+	try
+		: cnt(new size_t(1))
+		, ptr(p) 
+	{}
+	catch (...) {
+		delete p;
+	}
 	shared_ptr(shared_ptr const& p) noexcept {
 		ptr = p.ptr;
 		cnt = p.cnt;
@@ -50,7 +57,7 @@ private:
 template<typename T>
 struct linked_ptr {
 	linked_ptr() noexcept : ptr(nullptr), prev(nullptr), next(nullptr) {}
-	linked_ptr(T* p) noexcept : ptr(p), prev(nullptr), next(nullptr) {}
+	explicit linked_ptr(T* p) noexcept : ptr(p), prev(nullptr), next(nullptr) {}
 	linked_ptr(linked_ptr const& p) noexcept : ptr(p.ptr) {
 		prev = &p;
 		next = p.next;
@@ -83,26 +90,28 @@ struct linked_ptr {
 		return *ptr;
 	}
 	void swap(linked_ptr& rhs) noexcept {
-		std::swap(ptr, rhs.ptr);
+		if (ptr != rhs.ptr) {
+			std::swap(ptr, rhs.ptr);
 
-		//std::swap(prev->next, rhs.prev->next);
-		if (prev) {
-			prev->next = &rhs;
-		}
-		if (rhs.prev) {
-			rhs.prev->next = this;
-		}
+			//std::swap(prev->next, rhs.prev->next);
+			if (prev) {
+				prev->next = &rhs;
+			}
+			if (rhs.prev) {
+				rhs.prev->next = this;
+			}
 
-		//std::swap(next->prev, rhs.next->prev);
-		if (next) {
-			next->prev = &rhs;
-		}
-		if (rhs.next) {
-			rhs.next->prev = this;
-		}
+			//std::swap(next->prev, rhs.next->prev);
+			if (next) {
+				next->prev = &rhs;
+			}
+			if (rhs.next) {
+				rhs.next->prev = this;
+			}
 
-		std::swap(prev, rhs.prev);
-		std::swap(next, rhs.next);
+			std::swap(prev, rhs.prev);
+			std::swap(next, rhs.next);
+		}
 	}
 	linked_ptr& operator=(linked_ptr const& rhs) noexcept {
 		linked_ptr copy(rhs);
