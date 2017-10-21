@@ -4,7 +4,7 @@
 template <typename T>
 struct shared_ptr {
 	shared_ptr() noexcept : cnt(nullptr), ptr(nullptr) {}
-	shared_ptr(T* p) noexcept : cnt(new size_t(1)), ptr(p) {}
+	explicit shared_ptr(T* p) noexcept : cnt(new size_t(1)), ptr(p) {}
 	shared_ptr(shared_ptr const& p) noexcept {
 		ptr = p.ptr;
 		cnt = p.cnt;
@@ -24,7 +24,7 @@ struct shared_ptr {
 	T* get() const noexcept {
 		return ptr;
 	}
-	T*& operator->() noexcept {
+	T* operator->() noexcept {
 		return ptr;
 	}
 	T* operator->() const noexcept {
@@ -73,7 +73,7 @@ struct linked_ptr {
 	T* get() const noexcept {
 		return ptr;
 	}
-	T*& operator->() noexcept {
+	T* operator->() noexcept {
 		return ptr;
 	}
 	T* operator->() const noexcept {
@@ -305,14 +305,14 @@ void persistent_set<T, smart_ptr>::erase(iterator const& removable_node_iterator
 template <typename T, template <typename> class smart_ptr>
 smart_ptr<typename persistent_set<T, smart_ptr>::node_base> persistent_set<T, smart_ptr>::erase(smart_ptr<node_base> cur_node, node_base* removable_node) {
 	if (*static_cast<node*>(cur_node.get())->data.get() < *static_cast<node*>(removable_node)->data) {
-		return new node(cur_node->left,
+		return smart_ptr<node_base>(new node(cur_node->left,
 			erase(static_cast<node*>(cur_node.get())->right, removable_node),
-			static_cast<node*>(cur_node.get())->data);
+			static_cast<node*>(cur_node.get())->data));
 	}
 	if (*static_cast<node*>(removable_node)->data < *static_cast<node*>(cur_node.get())->data.get()) {
-		return new node(erase(cur_node->left, removable_node),
+		return smart_ptr<node_base>(new node(erase(cur_node->left, removable_node),
 			static_cast<node*>(cur_node.get())->right,
-			static_cast<node*>(cur_node.get())->data);
+			static_cast<node*>(cur_node.get())->data));
 	}
 	if (cur_node->left.get() == nullptr) {
 		return static_cast<node*>(cur_node.get())->right;
@@ -324,9 +324,9 @@ smart_ptr<typename persistent_set<T, smart_ptr>::node_base> persistent_set<T, sm
 	while (v->left.get()) {
 		v = v->left.get();
 	}
-	return new node(cur_node->left,
+	return smart_ptr<node_base>(new node(cur_node->left,
 		smart_ptr<node_base>(erase(static_cast<node*>(cur_node.get())->right, v)),
-		static_cast<node*>(v)->data);
+		static_cast<node*>(v)->data));
 }
 
 template <typename T, template <typename> class smart_ptr>
